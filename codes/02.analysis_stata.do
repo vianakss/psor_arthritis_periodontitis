@@ -243,10 +243,10 @@ display "Log-likelihood (full model): " e(ll)
 display "Log-likelihood (null model): " e(ll_0)
 display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 
-capture drop p_hat_m3
-predict p_hat_m3, pu0
-roctab case_status p_hat_m3
-roctab case_status p_hat_m3, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_3, replace)
+capture drop p_hat_m2
+predict p_hat_m2, pu0
+roctab case_status p_hat_m2
+roctab case_status p_hat_m2, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_3, replace)
 cd "C:\your\path\here\"
 graph export "graph_3.png", name(graph_3) width(3000) replace
 
@@ -304,10 +304,10 @@ display "Log-likelihood (full model): " e(ll)
 display "Log-likelihood (null model): " e(ll_0)
 display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 
-capture drop p_hat_m2
-predict p_hat_m2, pu0
-roctab case_status p_hat_m2
-roctab case_status p_hat_m2, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_5, replace)
+capture drop p_hat_m3
+predict p_hat_m3, pu0
+roctab case_status p_hat_m3
+roctab case_status p_hat_m3, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_5, replace)
 cd "C:\your\path\here\"
 graph export "graph_5.png", name(graph_5) width(3000) replace
 
