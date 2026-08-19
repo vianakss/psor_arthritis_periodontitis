@@ -199,12 +199,12 @@ display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 predict p_hat_m1, pu0
 roctab case_status p_hat_m1
 roctab case_status p_hat_m1, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_1, replace)
-cd "C:\Users\kvufm\OneDrive\Artigos em produção\Artigo - Artrite - amanda\Helena - Artrite"
+cd "C:\your\path\here\"
 graph export "graph_1.png", name(graph_1) width(3000) replace
 
 * Forest plot
 coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Education}" 1.income = "{bf:Household income}" 1.smoking = "{bf:Smoking}" 1.alcohol = "{bf:Alcohol}" 1.diabetes = "{bf:Diabetes}", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Odds Ratio (95% CI)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_2, replace)
-cd "C:\Users\kvufm\OneDrive\Artigos em produção\Artigo - Artrite - amanda\Helena - Artrite"
+cd "C:\your\path\here\"
 graph export "graph_2.png", name(graph_2) width(3000) replace
 
 *VIF test
