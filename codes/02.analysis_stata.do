@@ -47,11 +47,14 @@ label values perio_stage_cat perio_stage_cat_lbl
 label variable perio_stage_cat "Periodontitis stage (categorized)"
 
 
+
+
 ********************************************************************************
 *** Table 1 — Sociodemographic characteristics (matched case-control pairs) ***
 ********************************************************************************
+
 capture log close
-log using "C:\your\path\here\Table_1.log", replace
+log using "log_table_1.log", replace
 
 * Descriptive statistics
 * Age and sex: matching variables — descriptives only (p = 1.000 by design)
@@ -88,7 +91,8 @@ log close
 *** Table 2 — Periodontal characteristics (matched case-control pairs) ***
 ********************************************************************************
 capture log close
-log using "C:\your\path\here\Table_2.log", replace
+log using "log_table_2.log", replace
+
 
 *Derived variables (if not already created)
 capture drop mean_pd mean_cal
@@ -113,6 +117,9 @@ preserve
 keep match_id case_status periodontitis perio_stage_cat mean_pd mean_cal plaque_pct pct_bop pct_pd4 pct_pd5_6 pct_pd7plus
 destring match_id, replace
 reshape wide periodontitis perio_stage_cat mean_pd mean_cal plaque_pct pct_bop pct_pd4 pct_pd5_6 pct_pd7plus, i(match_id) j(case_status)
+
+*Verify variable names after reshape
+ds *0 *1
 
 *Categorical — paired tests
 symmetry periodontitis0 periodontitis1, exact
@@ -139,6 +146,7 @@ signrank pct_bop1 = pct_bop0
 signrank pct_pd41 = pct_pd40
 signrank pct_pd5_61 = pct_pd5_60
 signrank pct_pd7plus1 = pct_pd7plus0
+
 restore
 
 log close
@@ -149,7 +157,7 @@ log close
 *** Table 3 — Conditional logistic regression (matched case-control pairs) ***
 ********************************************************************************
 capture log close
-log using "C:\your\path\here\Table_3.log", replace
+log using "log_table_3.log", replace
 
 *Crude ORs
 clogit case_status c.mean_pd, group(match_id) or
@@ -199,13 +207,31 @@ display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 predict p_hat_m1, pu0
 roctab case_status p_hat_m1
 roctab case_status p_hat_m1, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_1, replace)
-cd "C:\your\path\here\"
 graph export "graph_1.png", name(graph_1) width(3000) replace
+
+
+* Model discrimination (AUC) - Portuguese
+capture drop p_hat_m1_pt
+predict p_hat_m1_pt, pu0
+roctab case_status p_hat_m1_pt
+local auc : display %6.4f r(area)
+roctab case_status p_hat_m1_pt, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) ytitle("Sensibilidade", size(small)) xtitle("1 - Especificidade", size(small)) note("Área sob a curva ROC = `auc'", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_1_pt, replace)
 
 * Forest plot
 coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Education}" 1.income = "{bf:Household income}" 1.smoking = "{bf:Smoking}" 1.alcohol = "{bf:Alcohol}" 1.diabetes = "{bf:Diabetes}", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Odds Ratio (95% CI)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_2, replace)
-cd "C:\your\path\here\"
-graph export "graph_2.png", name(graph_2) width(3000) replace
+graph export "graph_2.png", name(graph_2_en) width(3000) replace
+
+* Forest Plot Portuguese
+coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Escolaridade}" 1.income = "{bf:Renda}" 1.smoking = "{bf:Fumo}" 1.alcohol = "{bf:Alcool}" 1.diabetes = "{bf:Diabetes}", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Odds Ratio (95% CI)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_2_pt, replace)
+
+
+* Forest plot - Portuguese
+coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Escolaridade}" 1.income = "{bf:Renda familiar}" 1.smoking = "{bf:Tabagismo}" 1.alcohol = "{bf:Consumo de álcool}" 1.diabetes = "{bf:Diabetes}", labsize(small)) coeflabels(mean_pd = "Média de PS (mm)" 1.education = "≥8 anos" 1.income = "2–5 salários mínimos" 2.income = "≥5 salários mínimos" 1.smoking = "Sim" 1.alcohol = "Sim" 1.diabetes = "Sim", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Razão de chances (IC de 95%)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_2_pt, replace)
+
+graph export "graph_2_pt.png", name(graph_2_pt) width(3000) replace
+
+
+
 
 *VIF test
 regress case_status c.mean_pd i.education i.income i.smoking i.alcohol i.diabetes
@@ -243,17 +269,26 @@ display "Log-likelihood (full model): " e(ll)
 display "Log-likelihood (null model): " e(ll_0)
 display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 
-capture drop p_hat_m2
-predict p_hat_m2, pu0
-roctab case_status p_hat_m2
-roctab case_status p_hat_m2, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_3, replace)
-cd "C:\your\path\here\"
+capture drop p_hat_m3
+predict p_hat_m3, pu0
+roctab case_status p_hat_m3
+roctab case_status p_hat_m3, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_3, replace)
 graph export "graph_3.png", name(graph_3) width(3000) replace
 
+* Model discrimination (AUC) - Portuguese
+capture drop p_hat_m3_pt
+predict p_hat_m3_pt, pu0
+roctab case_status p_hat_m3_pt
+local auc : display %6.4f r(area)
+roctab case_status p_hat_m3_pt, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) ytitle("Sensibilidade", size(small)) xtitle("1 - Especificidade", size(small)) note("Área sob a curva ROC = `auc'", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_3_pt, replace)
 
+*Forest plot
 coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Education}" 1.income = "{bf:Household income}" 1.smoking = "{bf:Smoking}" 1.alcohol = "{bf:Alcohol}" 1.diabetes = "{bf:Diabetes}", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Odds Ratio (95% CI)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_4, replace)
-cd "C:\your\path\here\"
 graph export "graph_4.png", name(graph_4) width(3000) replace
+
+
+* Forest plot - Portuguese
+coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(1.education = "{bf:Escolaridade}" 1.income = "{bf:Renda familiar}" 1.smoking = "{bf:Tabagismo}" 1.alcohol = "{bf:Consumo de álcool}" 1.diabetes = "{bf:Diabetes}", labsize(small)) coeflabels(pct_bop = "Sangramento (%)" 1.education = "≥8 anos" 1.income = "2–5 salários mínimos" 2.income = "≥5 salários mínimos" 1.smoking = "Sim" 1.alcohol = "Sim" 1.diabetes = "Sim", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Razão de chances (IC de 95%)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_4_pt, replace)
 
 *VIF test
 regress case_status c.pct_bop i.education i.income i.smoking i.alcohol i.diabetes
@@ -304,16 +339,27 @@ display "Log-likelihood (full model): " e(ll)
 display "Log-likelihood (null model): " e(ll_0)
 display "McFadden pseudo R²: " 1 - (e(ll)/e(ll_0))
 
-capture drop p_hat_m3
-predict p_hat_m3, pu0
-roctab case_status p_hat_m3
-roctab case_status p_hat_m3, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_5, replace)
-cd "C:\your\path\here\"
+capture drop p_hat_m2
+predict p_hat_m2, pu0
+roctab case_status p_hat_m2
+roctab case_status p_hat_m2, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) name(graph_5, replace)
 graph export "graph_5.png", name(graph_5) width(3000) replace
+
+* Model discrimination (AUC) - Portuguese
+capture drop p_hat_m3_pt
+capture drop p_hat_m3_pt
+predict p_hat_m3_pt, pu0
+roctab case_status p_hat_m3_pt
+local auc : display %6.4f r(area)
+roctab case_status p_hat_m3_pt, graph plotopts(lcolor(navy) lwidth(medthick) mcolor(navy) msymbol(O)) rlopts(lcolor(red)) ytitle("Sensibilidade", size(small)) xtitle("1 - Especificidade", size(small)) note("Área sob a curva ROC = `auc'", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_5_pt, replace)
+
 
 coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(2.mean_cal_cat = "{bf:Mean CAL}" 1.education = "{bf:Education}" 1.income = "{bf:Household income}" 1.smoking = "{bf:Smoking}" 1.alcohol = "{bf:Alcohol}" 1.diabetes = "{bf:Diabetes}", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Odds Ratio (95% CI)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_6, replace)
 
-cd "C:\your\path\here\"
+* Forest plot - Portuguese
+coefplot, eform drop(_cons) horizontal xscale(log range(0.4 2.5)) xline(1, lcolor(red) lwidth(thin)) xlabel(0.5 0.75 1 1.5 2.5 5, labsize(small) angle(0)) ciopts(recast(rcap) lwidth(medthin) lcolor(gs6)) msymbol(square) msize(small) mcolor(navy) headings(2.mean_cal_cat = "{bf:Média de NIC}" 1.education = "{bf:Escolaridade}" 1.income = "{bf:Renda familiar}" 1.smoking = "{bf:Tabagismo}" 1.alcohol = "{bf:Consumo de álcool}" 1.diabetes = "{bf:Diabetes}", labsize(small)) coeflabels(2.mean_cal_cat = "Tercil 2" 3.mean_cal_cat = "Tercil 3" 1.education = "≥8 anos" 1.income = "2–5 salários mínimos" 2.income = "≥5 salários mínimos" 1.smoking = "Sim" 1.alcohol = "Sim" 1.diabetes = "Sim", labsize(small)) ylabel(, labsize(small)) legend(off) xtitle("Razão de chances (IC de 95%)", size(small)) graphregion(color(white)) plotregion(color(white)) name(graph_6_pt, replace)
+
+
 graph export "graph_6.png", name(graph_6) width(3000) replace
 
 *VIF test
@@ -328,12 +374,16 @@ log close
 *** Figures ***
 ******************************************************************************** 
 graph combine graph_2 graph_4 graph_6, rows(3) cols(1) xsize(5) ysize(8) iscale(0.7) name(figure_2, replace)
-cd "C:\your\path\here\"
 graph export "figure_2.png", name(figure_2) width(3000) replace
 
 graph combine graph_1 graph_3 graph_5, rows(3) cols(1) xsize(5) ysize(8) iscale(0.7) name(figure_3, replace)
-cd "C:\your\path\here\"
 graph export "figure_3.png", name(figure_3) width(3000) replace
 
+********************************************************************************
+*** Figures Portuguese ***
+******************************************************************************** 
+graph combine graph_2_pt graph_4_pt graph_6_pt, rows(3) cols(1) xsize(5) ysize(8) iscale(0.7) name(figure_2, replace)
+graph export "figure_2_pt.png", name(figure_2) width(3000) replace
 
-
+graph combine graph_1_pt graph_3_pt graph_5_pt, rows(3) cols(1) xsize(5) ysize(8) iscale(0.7) name(figure_3, replace)
+graph export "figure_3_pt.png", name(figure_3) width(3000) replace
